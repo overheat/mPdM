@@ -35,8 +35,8 @@ Fortunately, we already have the same architecture(ARM) and same chipset(nRF5283
 
 Our target board is a customized nRF52832 board, with Arduino UNO hardware interface and proprietary DIP-24 hardware interface.
 
-Connecting a 3-axis MEMS accelerometer daughterboard, STEVAL-MKI105V1
-with LIS3DH on it, to the main board. Later we can replace this sensor to an industry level accelerometer ISM330DLC.
+Connecting a 3-axis MEMS accelerometer daughterboard, STEVAL-MKI151V1
+with LIS2DH12 on it, to the main board. Later we can replace this sensor to an industry level accelerometer ISM330DLC.
 
 ![board](images/nrf5_mesh.png)
 
@@ -54,7 +54,7 @@ You also can find the example code in https://github.com/overheat/mPdM
 
 
 ## Application porting
-### seed
+### seed project
 ```
 # Enter working folder
 cd $(WORKING_FOLDER) 
@@ -71,35 +71,73 @@ ninja
 ninja flash
 ```
 
+
 You will see this:
 ```
 ***** Booting Zephyr OS zephyr-v1.14.0-1525-g591b0e1c7af2 *****
 Hello World! nrf5_meshdk
 ```
 
-### Tree
+### adding sensor
+First, adding sensor Device tree description, it is a way of describing hardware and configuration information for boards.
 
+Device tree was adopted for use in the **Linux kernel** for the PowerPC architecture. However, it is now in use for ARM and other architectures.
+```
+diff --git a/nrf5_meshdk.overlay b/nrf5_meshdk.overlay
+new file mode 100644
+index 0000000..b9c602f
+--- /dev/null
++++ b/nrf5_meshdk.overlay
+@@ -0,0 +1,16 @@
++&spi2 {
++
++       lis2dh@0 {
++               compatible = "st,lis2dh";
++               reg = <0>;
++               spi-max-frequency = <8000000>;
++               label = "LIS2DH";
++               int1-gpios = <&gpio0 13 0>;
++       };
++};
+```
 
+Adding project configuration.
+```
+diff --git a/prj.conf b/prj.conf
+index b2a4ba5..8ce791b 100644
+--- a/prj.conf
++++ b/prj.conf
+@@ -1 +1,5 @@
+-# nothing here
++CONFIG_SPI=y
++CONFIG_SENSOR=y
++CONFIG_LIS2DH=y
+```
 
+Finally, adding application code.
+```
+diff --git a/src/main.c b/src/main.c
+index 2d4a7f0..6447431 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -5,9 +5,58 @@
+ void main(void)
+ {
+-       printk("Hello World! %s\n", CONFIG_BOARD);
++       struct device *dev= device_get_binding(
++                               DT_INST_0_ST_LIS2DH_LABEL);
++
++       while(1){
++
++               printf("Accelerometer data:\n");
++               if (read_sensor(dev, SENSOR_CHAN_ACCEL_XYZ) < 0) {
++                       printf("Failed to read accelerometer data\n");
++               }
++               k_sleep(SLEEP_TIME);
++       }
+ }
+```
 
+### adding Bluetooth Low Energy
 
-## Issues
-
-- performance
-### HW
-### SW
-
-## Testing
-### HW
-- power consumption
-### SW
-- unit testing(zephyr)
-- integrate testing(zephyr)
-- system testing
-- Regression testing(for bugs)
-
-
-## Not today
-- high throughput
-- Microphone
-- Environmental sensor
+### adding algorithms
