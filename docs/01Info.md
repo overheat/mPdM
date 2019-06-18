@@ -1,6 +1,6 @@
 # Motors Predictive Maintenance device
 
-## Introduction
+![front](images/ILL_ST-WG-MOTOR-SCAN-1140x489_RGB_300dpi_HR_AIAP.jpg)
 ### What is Motors Predictive Maintenance device?
 Firstly, Predictive maintenance (PdM) techniques are designed to help determine the condition of in-service equipment in order to estimate when maintenance should be performed.
 
@@ -27,14 +27,15 @@ Here we are focusing on the "End node".
 
 
 ### The starting point
-We take ST STEVAL-BFA001V1B as a reference which is an industrial reference design kit designed for condition monitoring (CM) and predictive maintenance (PdM).
+We take ST [STEVAL-BFA001V1B](https://www.st.com/content/st_com/en/products/evaluation-tools/solution-evaluation-tools/communication-and-connectivity-solution-eval-boards/steval-bfa001v1b.html#overview) as a reference which is an industrial reference design kit designed for condition monitoring (CM) and predictive maintenance (PdM).
 
-https://www.st.com/content/st_com/en/products/evaluation-tools/solution-evaluation-tools/communication-and-connectivity-solution-eval-boards/steval-bfa001v1b.html#overview
 
-### Targe
-Monitoring the machine and run for multiple years on a battery, also connect to the Cloud for remote decision/action.
+![STEVAL-BFA001V1B](images/MFG_STEVAL-IDP003V1.jpeg)
+<center>Fig. 3</center>
+
+### Target
 
 Here, we will port the "End node" which is based on STM32 chipset initially to a new low power multiprotocol SoC(nRF52832). Debugging and testing.
 
 ![HW](images/HW.png)
-<center>Fig. 3</center>
+<center>Fig. 4</center>

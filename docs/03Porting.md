@@ -1,11 +1,20 @@
-# Porting 
+# Porting process
+This section contains details regarding porting the OS/Software from the existing hardware to one with a new low-power chipset. Those porting process list here:
+- Architecture porting
+- Board Porting
+- Application porting
+    - seed project
+    - adding sensor
+    - adding Bluetooth Low Energy
+    - adding algorithms (to be continue)
+- Algorithm fine tuning (addressing #5 issue)
 
-## RTOS or not?
-Yes, we need a RTOS. There are many reasons, the most important one for me is that it will help you to migrate to different board or chipset, even architecture quickly. So, why not?
+## First, RTOS or not?
+Yes, we need a RTOS. There are many reasons, the most important one is that it will help you to migrate to different board ,chipset, architecture quickly. So, why not?
 
-Also, there are lots of choice of RTOS, like FreeRTOS, Threadx, Zephyr and so on. We use Zephyr here, which is a LFC Project, is a small, scalable RTOS for connected, resource constrained devices.
+There are lots of choice of RTOS, like FreeRTOS, Threadx, Zephyr and so on. We use Zephyr here, which is a LFC Project, is a small, scalable RTOS for connected, resource constrained devices.
 
-### An architecture porting, like x86 to ARM
+## Architecture porting
 can be divided in several parts:
 - The early boot sequence:  
     each architecture has different steps it must take when the CPU comes out of reset  
@@ -31,7 +40,7 @@ can be divided in several parts:
 
 Fortunately, we already have the same architecture(ARM) and same chipset(nRF52832) even similar board(nrf52_pca10040) in Zephyr project RTOS, so we only need to port on the board level.
 
-### Board Porting
+## Board Porting
 
 Our target board is a customized nRF52832 board, with Arduino UNO hardware interface and proprietary DIP-24 hardware interface.
 
@@ -141,3 +150,13 @@ index 2d4a7f0..6447431 100644
 ### adding Bluetooth Low Energy
 
 ### adding algorithms
+
+## Algorithm fine tuning
+
+Once enable Segger’s J-Link supports Real-Time Tracing (RTT), there will be a log file under project folder on your PC. It contains all the date send out by RTT channel. We can load those data to other software, like **Matlab**, for advanced algorithm fine tuning.
+
+After algorithm fine tuning on PC, we need to port back those algorithm back to embedded device. For example, MATLAB Coder™ is an add-on product that allows you to generate portable and readable C or C++ code from your MATLAB code. This code can then be integrated directly into C/C++ development environment.
+
+
+![Matlab](images/Matlab.png)
+<center>Fig. 1</center>
