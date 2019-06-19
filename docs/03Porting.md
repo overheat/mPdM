@@ -6,16 +6,21 @@ This section contains details regarding porting the OS/Software from the existin
     - seed project
     - adding sensor
     - adding Bluetooth Low Energy
-    - adding algorithms (to be continue)
+    - adding algorithms (to be continued)
 - Algorithm fine tuning (addressing #5 issue)
+- Test Framework
+- Continuous Integration (CI)
 
+All the example code available on https://github.com/overheat/mPdM
 ## First, RTOS or not?
-Yes, we need a RTOS. There are many reasons, the most important one is that it will help you to migrate to different board ,chipset, architecture quickly. So, why not?
+Yes, we need RTOS. There are many reasons, the most important one is that it will help you to migrate to different boards,chipsets, architectures quickly. So, why not?
 
 There are lots of choice of RTOS, like FreeRTOS, Threadx, Zephyr and so on. We use Zephyr here, which is a LFC Project, is a small, scalable RTOS for connected, resource constrained devices.
 
+<div STYLE="page-break-after: always;"></div>
+
 ## Architecture porting
-can be divided in several parts:
+can be divided into several parts:
 - The early boot sequence:  
     each architecture has different steps it must take when the CPU comes out of reset  
 - Interrupt and exception handling:  
@@ -40,14 +45,19 @@ can be divided in several parts:
 
 Fortunately, we already have the same architecture(ARM) and same chipset(nRF52832) even similar board(nrf52_pca10040) in Zephyr project RTOS, so we only need to port on the board level.
 
+<div STYLE="page-break-after: always;"></div>
+
 ## Board Porting
 
 Our target board is a customized nRF52832 board, with Arduino UNO hardware interface and proprietary DIP-24 hardware interface.
 
-Connecting a 3-axis MEMS accelerometer daughterboard, STEVAL-MKI151V1
+We are connecting a 3-axis MEMS accelerometer daughterboard, STEVAL-MKI151V1
 with LIS2DH12 on it, to the main board. Later we can replace this sensor to an industry level accelerometer ISM330DLC.
 
 ![board](images/nrf5_mesh.png)
+<center>Fig. 7</center>
+
+<div STYLE="page-break-after: always;"></div>
 
 ```
 # Enter working folder
@@ -59,11 +69,10 @@ mv boards/arm/nrf52_pca10040/ boards/arm/nrf5_meshdk/
 # TODO: sed | 
 ...
 ```
-You also can find the example code in https://github.com/overheat/mPdM
-
+<div STYLE="page-break-after: always;"></div>
 
 ## Application porting
-### seed project
+### 1. seed project
 ```
 # Enter working folder
 cd $(WORKING_FOLDER) 
@@ -81,16 +90,15 @@ ninja flash
 ```
 
 
-You will see this:
+You will see this on the console:
 ```
 ***** Booting Zephyr OS zephyr-v1.14.0-1525-g591b0e1c7af2 *****
 Hello World! nrf5_meshdk
 ```
 
-### adding sensor
+### 2. adding sensor
 First, adding sensor Device tree description, it is a way of describing hardware and configuration information for boards.
 
-Device tree was adopted for use in the **Linux kernel** for the PowerPC architecture. However, it is now in use for ARM and other architectures.
 ```
 diff --git a/nrf5_meshdk.overlay b/nrf5_meshdk.overlay
 new file mode 100644
@@ -109,6 +117,7 @@ index 0000000..b9c602f
 +       };
 +};
 ```
+*Device tree was adopted for use in the **Linux kernel** for the PowerPC architecture. However, it is now in use for ARM and other architectures.*
 
 Adding project configuration.
 ```
@@ -147,16 +156,76 @@ index 2d4a7f0..6447431 100644
  }
 ```
 
-### adding Bluetooth Low Energy
+### 3. adding Bluetooth Low Energy
+Zephyr's bluetooth demo, which is under samples/bluetooth/peripheral, is a perfect start point. This application demonstrating the BLE Peripheral role. It has several well-known services, like DIS (Device Information) GATT Service, and **vendor-specific GATT services** that it exposes.
 
-### adding algorithms
+We can extend vendor-specific GATT services for our case, adding those characteristics:
+
+| Characteristic Name | Requirement | Mandatory | Optional | Security Permissions |
+| ------------------- | ----------- | --------- | -------- | -------- |
+| First FFT peak      |     M       | Indicate  |          | None.      |
+| CCC descriptor      |     M       | Read, Write |          | None.      |
+| Second FFT peak     |     O       | Indicate  |          | None.      |
+| CCC descriptor      |     C.1     | Read, Write |          | None.      |
+| Valid Range descriptor  |  C.2    | Read |          | None.      |
+<center>Table. 5</center>
+
+*M: Mandatory* 
+*O: Optional*
+*C.1: Mandatory if Intermediate second FFT peak characteristic is supported, otherwise excluded.*
+*C.2: Mandatory if Measurement Interval is supported and Writable, otherwise excluded.*
+
+For the implementation detail, please check the Github.
+
+### 4. adding algorithms
+To be continued...
+
+<div STYLE="page-break-after: always;"></div>
 
 ## Algorithm fine tuning
 
 Once enable Segger’s J-Link supports Real-Time Tracing (RTT), there will be a log file under project folder on your PC. It contains all the date send out by RTT channel. We can load those data to other software, like **Matlab**, for advanced algorithm fine tuning.
 
-After algorithm fine tuning on PC, we need to port back those algorithm back to embedded device. For example, MATLAB Coder™ is an add-on product that allows you to generate portable and readable C or C++ code from your MATLAB code. This code can then be integrated directly into C/C++ development environment.
+After algorithm fine tuning on PC, we need to port back those algorithms back to an embedded device. For example, MATLAB Coder™ is an add-on product that allows you to generate portable and readable C or C++ code from your MATLAB code. This code can then be integrated directly into C/C++ development environment.
 
 
 ![Matlab](images/Matlab.png)
-<center>Fig. 1</center>
+<center>Fig. 8</center>
+
+<div STYLE="page-break-after: always;"></div>
+
+## Test Framework
+
+Almost every popular RTOS has a Test Framework, which provides a simple testing framework intended to be used during development. It provides basic assertion macros and a generic test structure.
+
+The framework can be used in two ways, either as a generic framework for integration testing, or for unit testing specific modules. However, the implementation is different depending on a different kind of RTOS. 
+
+Typical **integration testing** case project may consist of multiple sub-tests or smaller tests that either can be testing functionality or APIs. Functions of implementing a test should follow the guidelines below:
+
+- Test cases function
+- Test cases should be documented using doxygen
+- Test function names should be unique within the section or component being tested
+
+After finish an integration testing case project, It can then be tested with a simple Unix Bash command or script, then it will be automatically built and run by the sanitycheck script.
+
+**Unit testing**, This means that rather than including the entire Zephyr OS for testing a single function, you can focus the testing efforts into the specific module in question. This will speed up testing since only the module will have to be compiled in, and the tested functions will be called directly.
+
+Since you won’t be including basic kernel data structures that most code depends on, you have to provide function stubs in the test.
+
+<div STYLE="page-break-after: always;"></div>
+
+## Continuous Integration (CI)
+
+A Continuous Integration (CI) system that runs on every Pull Request (PR) in order to verify several aspects of the PR:
+
+- Git commit formatting
+- Coding Style
+- Sanity Check builds for multiple architectures and boards
+- Documentation build to verify any doc changes
+
+This part should be already integrated to project version control hosting. For example, continuous integration work using github + travis-ci.
+
+![CI](images/continuous-integration-in-github.jpg)
+<center>Fig. 9</center>
+
+<div STYLE="page-break-after: always;"></div>
