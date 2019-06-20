@@ -1,14 +1,8 @@
 sample:
-  description: Hello World sample, the simplest Zephyr
-    application
-  name: hello world
-common:
-    tags: introduction
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "Hello World! (.*)"
+  description: TBD
+  name: TBD
 tests:
-  sample.helloworld:
-    tags: introduction
+  sample.bluetooth.peripheral:
+    harness: bluetooth
+    platform_whitelist: qemu_cortex_m3 qemu_x86
+    tags: bluetooth
