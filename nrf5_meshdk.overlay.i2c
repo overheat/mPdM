@@ -6,9 +6,9 @@
 
 &arduino_i2c {
 
-	lis2dh@18 {
+	lis2dh@19 {
 		compatible = "st,lis2dh";
-		reg = <0x18>;
+		reg = <0x19>;
 		label = "LIS2DH";
 	};
 };
