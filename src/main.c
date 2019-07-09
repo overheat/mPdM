@@ -25,6 +25,8 @@
 #define LED	DT_ALIAS_LED0_GPIOS_PIN
 
 
+struct device *accelerometer;
+
 static s32_t read_sensor(struct device *sensor, enum sensor_channel channel)
 {
 	struct sensor_value val[3];
@@ -33,21 +35,24 @@ static s32_t read_sensor(struct device *sensor, enum sensor_channel channel)
 	ret = sensor_sample_fetch(sensor);
 	if (ret < 0 && ret != -EBADMSG) {
 		printk("Sensor sample update error\n");
-		goto end;
 	}
 
 	ret = sensor_channel_get(sensor, channel, val);
 	if (ret < 0) {
 		printk("Cannot read sensor channels\n");
-		goto end;
 	}
 
 	printf("( x y z ) = ( %f  %f  %f )\n", sensor_value_to_double(&val[0]),
 					       sensor_value_to_double(&val[1]),
 					       sensor_value_to_double(&val[2]));
 
-end:
 	return ret;
+}
+
+static void lis2dh_handler(struct device *dev,
+			   struct sensor_trigger *trig)
+{
+	read_sensor(accelerometer, SENSOR_CHAN_ACCEL_XYZ);
 }
 
 void main(void)
@@ -55,7 +60,7 @@ void main(void)
 	struct device *dev = device_get_binding(LED_PORT);
 	gpio_pin_configure(dev, LED, GPIO_DIR_OUT);
 
-	struct device *accelerometer = device_get_binding(
+	accelerometer = device_get_binding(
 						DT_INST_0_ST_LIS2DH_LABEL);
 
 	if (accelerometer == NULL) {
@@ -64,21 +69,28 @@ void main(void)
 		return;
 	}
 
-	/* Implement notification. At the moment there is no suitable way
-	 * of starting delayed work so we do it here
-	 */
-	while (1) {
-		k_sleep(MSEC_PER_SEC);
+	if (IS_ENABLED(CONFIG_LIS2DH_TRIGGER)) {
+		struct sensor_trigger trig = {
+			.type = SENSOR_TRIG_DATA_READY,
+			.chan = SENSOR_CHAN_ALL,
+		};
+		if (sensor_trigger_set(dev, &trig, lis2dh_handler) < 0) {
+			printf("Cannot configure trigger\n");
+			return;
+		};
+	}
 
-		static int cnt = 0;
-		/* Set pin to HIGH/LOW every 1 second */
-		gpio_pin_write(dev, LED, cnt % 2);
-		cnt++;
-
+	while (!IS_ENABLED(CONFIG_LIS2DH_TRIGGER)) {
 		printk("Accelerometer data:\n");
 		if (read_sensor(accelerometer, SENSOR_CHAN_ACCEL_XYZ) < 0) {
 			printk("Failed to read accelerometer data\n");
 		}
 
+		static int cnt = 0;
+		/* Set pin to HIGH/LOW every 1 second */
+		gpio_pin_write(dev, LED, cnt % 2);
+		cnt++;
+		k_sleep(2000);
 	}
+	k_sleep(K_FOREVER);
 }

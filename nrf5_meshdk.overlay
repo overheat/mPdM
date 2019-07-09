@@ -10,5 +10,6 @@
 		compatible = "st,lis2dh";
 		reg = <0x18>;
 		label = "LIS2DH";
+		irq-gpios = <&gpio0 2 GPIO_INT_ACTIVE_HIGH>;
 	};
 };
