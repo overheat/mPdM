@@ -9,6 +9,7 @@ project(peripheral)
 
 target_sources(app PRIVATE
   src/main.c
+  src/ble.c
   src/gatt/hrs.c
   src/gatt/bas.c
   src/gatt/cts.c
